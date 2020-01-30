@@ -144,6 +144,7 @@ class GameAnalytics {
       os_version: data.os_version,
       sdk_version: 'rest api v2',
     }).then((res) => {
+
       if (!this.users[user]) {
         return;
       }
@@ -180,18 +181,19 @@ class GameAnalytics {
     const length = Math.round(Date.now() / 1000) - userData.start;
 
     // Send the session end request.
-    this._request('session_end', user, {length});
+    return this._request('session_end', user, {length})
+      .then(() => {
+          // Flush the player's cache.
+          return this._flush(user);
+      })
+      .then(() => {
 
-    // End the queue interval.
-    clearInterval(user.interval);
+          // End the queue interval.
+          clearInterval(user.interval);
 
-    // Flush the player's cache.
-    this._flush(user);
-
-    // Clear out the player data from the cache.
-    delete this.users[user];
-
-    return Promise.resolve();
+          // Clear out the player data from the cache.
+          delete this.users[user];
+      });
   }
 
   /**
